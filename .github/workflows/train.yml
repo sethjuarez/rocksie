@@ -40,7 +40,9 @@ jobs:
 
     - name: 1. Run Job
       run: |
-          az ml job create --file ./cloud/job.yaml --name $APP_NAME_$GITHUB_RUN_ID --stream 
+          cd cloud
+          az ml job create --file job.yaml --name $APP_NAME_$GITHUB_RUN_ID --stream 
+          cd ..
 
     - name: 2. Register Model
       run: |
