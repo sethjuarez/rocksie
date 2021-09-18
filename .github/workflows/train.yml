@@ -47,7 +47,7 @@ jobs:
         az ml job download --name $APP_NAME_$GITHUB_RUN_ID --outputs --download-path ./run
         mkdir model
         cp ./run/$APP_NAME_$GITHUB_RUN_ID/outputs/model/model.onnx ./model/model.onnx
-        cp ./run/$APP_NAME_$GITHUB_RUN_ID/outputs/model/params.json ./model/meta.json
+        cp ./run/$APP_NAME_$GITHUB_RUN_ID/outputs/model/meta.json ./model/meta.json
         LAST_MODEL_VER=$(az ml model show -n $APP_NAME-model --query version | tr -d "\r")
         az ml model create --name $APP_NAME-model --local-path ./model --version $((LAST_MODEL_VER+1))
         echo $(az ml endpoint show --name $APP_NAME-endpoint --query 'deployments | length(@)' | tr -d "\r")
