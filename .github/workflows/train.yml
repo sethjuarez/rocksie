@@ -59,15 +59,16 @@ jobs:
         MODEL_VER=$(az ml model show -n $APP_NAME-model --query version | tr -d "\r")
         if [[ $ENDPOINT -eq '0' ]]
         then
-          python cloud/replace.py cloud/full.deploy --name $APP_NAME-endpoint --model $APP_NAME-model --version $MODEL_VER > cloud/$GITHUB_RUN_ID.yml
+          python ./cloud/replace.py ./cloud/full.deploy --name $APP_NAME-endpoint --model $APP_NAME-model --version $MODEL_VER > ./cloud/$GITHUB_RUN_ID.yml
           echo Endpoint Creation:
           cat cloud/$GITHUB_RUN_ID.yml
           az ml endpoint create -f cloud/$GITHUB_RUN_ID.yml
         else
+          DEPLOYMENTS=$(az ml endpoint show --name $APP_NAME-endpoint --query 'deployments | length(@)' | tr -d "\r")
           if [[ $DEPLOYMENTS  -eq '1' ]]
           then
-            DEPLOYMENTS=$(az ml endpoint show --name $APP_NAME-endpoint --query 'deployments | length(@)' | tr -d "\r")
-            python cloud/replace.py cloud/template.deploy --name $APP_NAME-endpoint --model $APP_NAME-model --version $MODEL_VER > cloud/$GITHUB_RUN_ID.yml
+            DEPLOY_NAME=$(az ml endpoint show --name earnings-endpoint --query deployments[0].name | tr -d '"')
+            python ./cloud/replace.py ./cloud/template.deploy --name $APP_NAME-endpoint --model $APP_NAME-model --version $MODEL_VER > ./cloud/$GITHUB_RUN_ID.yml
             echo New Deployment Definition:
             cat cloud/$GITHUB_RUN_ID.yml
             az ml endpoint update --name $APP_NAME-endpoint --deployment-file cloud/$GITHUB_RUN_ID.yml --traffic "$DEPLOY_NAME:100,$APP_NAME-$GITHUB_RUN_ID:0"
