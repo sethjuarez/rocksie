@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import time
+import base64
 import logging
 import requests
 import datetime
@@ -75,10 +76,16 @@ def run(image):
     prev_time = time.time()
 
     # input data
-    print(f'loading image {image}')
+    web = image.startswith('http')
+    print(f'loading image from [{"web" if web else "base4"}]')
     try:
-        response = requests.get(image)
-        img = Image.open(BytesIO(response.content))
+
+        if web:
+            response = requests.get(image)
+            img = Image.open(BytesIO(response.content))
+        else:
+            b64image = base64.b64decode(image)
+            img = Image.open(BytesIO(b64image))
         v = transform(img)
 
         # predict with model
@@ -136,3 +143,7 @@ if __name__ == '__main__':
     inf('https://aiadvocate.z5.web.core.windows.net/paper.png', 'paper')
     inf('https://aiadvocate.z5.web.core.windows.net/scissors.png', 'scissors')   
     inf('bad_uri', 'Bad Uri')
+
+    with open('testimage.txt', 'r') as f:
+        img = f.read()
+        inf(img, 'rock')
