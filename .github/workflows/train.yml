@@ -9,7 +9,7 @@ on:
     paths:
       - ./*.py
       - ./*.yml
-      - cloud/*.yml
+      - ./cloud/*.yml
 jobs:
   ml-workflow:
     runs-on: ubuntu-latest
@@ -40,7 +40,7 @@ jobs:
 
     - name: 1. Run Job
       run: |
-          az ml job create --file cloud/job.yaml --name $APP_NAME_$GITHUB_RUN_ID --stream 
+          az ml job create --file ./cloud/job.yaml --name $APP_NAME_$GITHUB_RUN_ID --stream 
 
     - name: 2. Register Model
       run: |
@@ -61,8 +61,8 @@ jobs:
         then
           python ./cloud/replace.py ./cloud/full.deploy --name $APP_NAME-endpoint --model $APP_NAME-model --version $MODEL_VER > ./cloud/$GITHUB_RUN_ID.yml
           echo Endpoint Creation:
-          cat cloud/$GITHUB_RUN_ID.yml
-          az ml endpoint create -f cloud/$GITHUB_RUN_ID.yml
+          cat ./cloud/$GITHUB_RUN_ID.yml
+          az ml endpoint create -f ./cloud/$GITHUB_RUN_ID.yml
         else
           DEPLOYMENTS=$(az ml endpoint show --name $APP_NAME-endpoint --query 'deployments | length(@)' | tr -d "\r")
           if [[ $DEPLOYMENTS  -eq '1' ]]
@@ -70,8 +70,8 @@ jobs:
             DEPLOY_NAME=$(az ml endpoint show --name earnings-endpoint --query deployments[0].name | tr -d '"')
             python ./cloud/replace.py ./cloud/template.deploy --name $APP_NAME-endpoint --model $APP_NAME-model --version $MODEL_VER > ./cloud/$GITHUB_RUN_ID.yml
             echo New Deployment Definition:
-            cat cloud/$GITHUB_RUN_ID.yml
-            az ml endpoint update --name $APP_NAME-endpoint --deployment-file cloud/$GITHUB_RUN_ID.yml --traffic "$DEPLOY_NAME:100,$APP_NAME-$GITHUB_RUN_ID:0"
+            cat ./cloud/$GITHUB_RUN_ID.yml
+            az ml endpoint update --name $APP_NAME-endpoint --deployment-file ./cloud/$GITHUB_RUN_ID.yml --traffic "$DEPLOY_NAME:100,$APP_NAME-$GITHUB_RUN_ID:0"
             az ml endpoint update --name $APP_NAME-endpoint --traffic "$DEPLOY_NAME:90,$APP_NAME-$GITHUB_RUN_ID:10"
           else
             echo "Too many deployments to proceed safely - will bail out for now."
