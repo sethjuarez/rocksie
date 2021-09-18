@@ -1,0 +1,83 @@
+name: MLOps Continuous Integration and Delivery
+
+on:
+  workflow_dispatch:
+         
+  push:
+    branches:
+      - main
+    paths:
+      - ./*.py
+      - ./*.yml
+      - cloud/*.yml
+jobs:
+  ml-workflow:
+    runs-on: ubuntu-latest
+    env:
+      APP_NAME: rocksie
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2.3.3
+
+    - name: Setup Python
+      uses: actions/setup-python@v2.1.4
+      with:
+        python-version: 3.7
+
+    - name: add az ml extension
+      run: |
+        az extension add -n ml -y
+
+    - name: azure login
+      uses: azure/login@v1
+      with:
+        creds: ${{secrets.AZURE_TOKEN}}
+
+    - name: set aml defaults
+      run: |
+          az config set defaults.workspace=${{secrets.AML_WORKSPACE}}
+          az config set defaults.group=${{secrets.AML_RG}}
+
+    - name: 1. Run Job
+      run: |
+          az ml job create --file cloud/job.yaml --name $APP_NAME_$GITHUB_RUN_ID --stream 
+
+    - name: 2. Register Model
+      run: |
+        az ml job download --name $APP_NAME_$GITHUB_RUN_ID --outputs --download-path ./run
+        mkdir model
+        cp ./run/$APP_NAME_$GITHUB_RUN_ID/outputs/model/model.onnx ./model/model.onnx
+        cp ./run/$APP_NAME_$GITHUB_RUN_ID/outputs/model/model.pth ./model/model.pth
+        cp ./run/$APP_NAME_$GITHUB_RUN_ID/outputs/model/params.json ./model/params.json
+        LAST_MODEL_VER=$(az ml model show -n $APP_NAME-model --query version | tr -d "\r")
+        az ml model create --name $APP_NAME-model --local-path ./model --version $((LAST_MODEL_VER+1))
+        echo $(az ml endpoint show --name $APP_NAME-endpoint --query 'deployments | length(@)' | tr -d "\r")
+
+    - name: 3. Add Deployment
+      run: |
+        ENDPOINT=$(az ml endpoint list --query "[?name=='$APP_NAME-endpoint'].name | length(@)" | tr -d "\r")
+        MODEL_VER=$(az ml model show -n $APP_NAME-model --query version | tr -d "\r")
+        if [[ $ENDPOINT -eq '0' ]]
+        then
+          python cloud/replace.py cloud/full.deploy --name $APP_NAME-endpoint --model $APP_NAME-model --version $MODEL_VER > cloud/$GITHUB_RUN_ID.yml
+          echo Endpoint Creation:
+          cat cloud/$GITHUB_RUN_ID.yml
+          az ml endpoint create -f cloud/$GITHUB_RUN_ID.yml
+        else
+          if [[ $DEPLOYMENTS  -eq '1' ]]
+          then
+            DEPLOYMENTS=$(az ml endpoint show --name $APP_NAME-endpoint --query 'deployments | length(@)' | tr -d "\r")
+            python cloud/replace.py cloud/template.deploy --name $APP_NAME-endpoint --model $APP_NAME-model --version $MODEL_VER > cloud/$GITHUB_RUN_ID.yml
+            echo New Deployment Definition:
+            cat cloud/$GITHUB_RUN_ID.yml
+            az ml endpoint update --name $APP_NAME-endpoint --deployment-file cloud/$GITHUB_RUN_ID.yml --traffic "$DEPLOY_NAME:100,$APP_NAME-$GITHUB_RUN_ID:0"
+            az ml endpoint update --name $APP_NAME-endpoint --traffic "$DEPLOY_NAME:90,$APP_NAME-$GITHUB_RUN_ID:10"
+          else
+            echo "Too many deployments to proceed safely - will bail out for now."
+          fi
+        fi
+
+
+        
+
+
