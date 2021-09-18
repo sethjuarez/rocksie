@@ -6,7 +6,6 @@ traffic:
   {deployment}: 100
 
 deployments:
-  #blue deployment
   - name: {deployment}
     app_insights_enabled: true
     model: azureml:{model}:{version}
@@ -15,7 +14,7 @@ deployments:
         local_path: ../
       scoring_script: score.py
     environment: azureml:pytorch-lightning-gpu-deploy:3
-    instance_type: Standard_NC6s_v3
+    instance_type: Standard_NC4as_T4_v3
     scale_settings:
       scale_type: Manual
       instance_count: 1
