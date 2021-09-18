@@ -12,4 +12,4 @@ scale_settings:
   scale_type: manual
   instance_count: 1
   min_instances: 1
-  max_instances: 2
+  max_instances: 1

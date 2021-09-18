@@ -65,6 +65,7 @@ def init():
     'rock': StandardPythonParameterType(0.2621823),
     'scissors': StandardPythonParameterType(0.21790285)
   }),
+  'updated': StandardPythonParameterType(datetime.datetime.now().isoformat()),
   'message': StandardPythonParameterType("Success!")
 }))
 def run(image):
@@ -94,6 +95,7 @@ def run(image):
             'time': float(0),
             'prediction': classes[int(np.argmax(pred_onnx))],
             'scores': predictions,
+            'updated': datetime.datetime.now().isoformat(),
             'message': 'Success!'
         }
 
@@ -107,6 +109,7 @@ def run(image):
             'time': float(0),
             'prediction': "none",
             'scores': predictions,
+            'updated': datetime.datetime.now().isoformat(),
             'message': f'{e}'
         }
 
@@ -131,5 +134,5 @@ if __name__ == '__main__':
 
     inf('https://aiadvocate.z5.web.core.windows.net/rock.png', 'rock')
     inf('https://aiadvocate.z5.web.core.windows.net/paper.png', 'paper')
-    inf('https://aiadvocate.z5.web.core.windows.net/scissors.png', 'scissors')
+    inf('https://aiadvocate.z5.web.core.windows.net/scissors.png', 'scissors')   
     inf('bad_uri', 'Bad Uri')
