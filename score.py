@@ -75,18 +75,23 @@ def run(image):
     print('starting inference clock')
     prev_time = time.time()
 
-    # input data
-    web = image.startswith('http')
-    print(f'loading image from [{"web" if web else "base4"}]')
+    # process data
     try:
-
-        if web:
+        if image.startswith('http'):
+            print(f'loading web image {image}')
             response = requests.get(image)
             img = Image.open(BytesIO(response.content))
+        elif image.startswith('data:image'):
+            data = image.split(",")
+            print(f'loading base64 image {data[0]}')
+            b64image = base64.b64decode(data[1])
+            img = Image.open(BytesIO(b64image))
         else:
+            print(f'loading base64 image')
             b64image = base64.b64decode(image)
             img = Image.open(BytesIO(b64image))
-        v = transform(img)
+
+        v = transform(img.convert('RGB'))
 
         # predict with model
         print('pre-prediction')
@@ -147,3 +152,8 @@ if __name__ == '__main__':
     with open('testimage.txt', 'r') as f:
         img = f.read()
         inf(img, 'rock')
+
+
+    with open('fullimage.txt', 'r') as f:
+        img = f.read()
+        inf(img, 'none')

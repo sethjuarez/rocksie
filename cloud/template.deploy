@@ -7,7 +7,7 @@ code_configuration:
     local_path: ../
   scoring_script: score.py
 environment: azureml:pytorch-lightning-deploy:3
-instance_type: Standard_NC4as_T4_v3
+instance_type: Standard_NC6s_v3
 scale_settings:
   scale_type: manual
   instance_count: 1
