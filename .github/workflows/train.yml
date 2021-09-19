@@ -67,27 +67,38 @@ jobs:
           if [[ $DEPLOYMENTS  -eq '1' ]]
           then
             DEPLOY_NAME=$(az ml endpoint show --name $APP_NAME-endpoint --query deployments[0].name | tr -d '"')
-            python ./cloud/replace.py ./cloud/template.deploy --name $APP_NAME-endpoint --model $APP_NAME-model --version $MODEL_VER > ./cloud/$GITHUB_RUN_ID.yml
+            python ./cloud/replace.py ./cloud/template.deploy --name $APP_NAME-$GITHUB_RUN_ID --model $APP_NAME-model --version $MODEL_VER > ./cloud/$GITHUB_RUN_ID.yml
             echo New Deployment Definition:
             cat ./cloud/$GITHUB_RUN_ID.yml
+            echo az ml endpoint update --name $APP_NAME-endpoint --deployment-file ./cloud/$GITHUB_RUN_ID.yml --traffic "$DEPLOY_NAME:100,$APP_NAME-$GITHUB_RUN_ID:0"
             az ml endpoint update --name $APP_NAME-endpoint --deployment-file ./cloud/$GITHUB_RUN_ID.yml --traffic "$DEPLOY_NAME:100,$APP_NAME-$GITHUB_RUN_ID:0"
+            echo az ml endpoint update --name $APP_NAME-endpoint --traffic "$DEPLOY_NAME:90,$APP_NAME-$GITHUB_RUN_ID:10"
             az ml endpoint update --name $APP_NAME-endpoint --traffic "$DEPLOY_NAME:90,$APP_NAME-$GITHUB_RUN_ID:10"
+
           else
             echo "Enumerating deployments."
             az ml endpoint show --name $APP_NAME-endpoint --query traffic > ./cloud/$GITHUB_RUN_ID.json
             cat ./cloud/$GITHUB_RUN_ID.json
-            DEPLOY_NAME=$(python ./cloud/replace.py ./cloud/$GITHUB_RUN_ID.json --min | tr -d '"')
+
+            DEPLOY_NAME=$(python ./cloud/replace.py ./cloud/$GITHUB_RUN_ID.json --max | tr -d '"')
             MIN_DEPLOY=$(python ./cloud/replace.py ./cloud/$GITHUB_RUN_ID.json --min | tr -d '"')
+
+            echo Main: $DEPLOY_NAME
+            echo Sub: $MIN_DEPLOY
 
             az ml endpoint update --name $APP_NAME-endpoint --traffic "$DEPLOY_NAME:100,$MIN_DEPLOY:0"
             python ./cloud/replace.py ./cloud/full.deploy --name $APP_NAME-endpoint --model $APP_NAME-model --version $MODEL_VER --deployment $DEPLOY_NAME > ./cloud/$GITHUB_RUN_ID.yml
             cat ./cloud/$GITHUB_RUN_ID.yml
+
+            echo az ml endpoint update --name $APP_NAME-endpoint -f ./cloud/$GITHUB_RUN_ID.yml
             az ml endpoint update --name $APP_NAME-endpoint -f ./cloud/$GITHUB_RUN_ID.yml
             
-            python ./cloud/replace.py ./cloud/template.deploy --name $APP_NAME-endpoint --model $APP_NAME-model --version $MODEL_VER > ./cloud/$GITHUB_RUN_ID.yml
+            python ./cloud/replace.py ./cloud/template.deploy --name $APP_NAME-$GITHUB_RUN_ID --model $APP_NAME-model --version $MODEL_VER > ./cloud/$GITHUB_RUN_ID.yml
             echo New Deployment Definition:
             cat ./cloud/$GITHUB_RUN_ID.yml
+            echo az ml endpoint update --name $APP_NAME-endpoint --deployment-file ./cloud/$GITHUB_RUN_ID.yml --traffic "$DEPLOY_NAME:100,$APP_NAME-$GITHUB_RUN_ID:0"
             az ml endpoint update --name $APP_NAME-endpoint --deployment-file ./cloud/$GITHUB_RUN_ID.yml --traffic "$DEPLOY_NAME:100,$APP_NAME-$GITHUB_RUN_ID:0"
+            echo az ml endpoint update --name $APP_NAME-endpoint --traffic "$DEPLOY_NAME:90,$APP_NAME-$GITHUB_RUN_ID:10"
             az ml endpoint update --name $APP_NAME-endpoint --traffic "$DEPLOY_NAME:90,$APP_NAME-$GITHUB_RUN_ID:10"
           fi
         fi
