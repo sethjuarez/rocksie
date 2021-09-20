@@ -18,8 +18,8 @@ class RoshamboModel(pl.LightningModule):
         self.save_hyperparameters()
         self.classes = classes
         self.lr = lr
-        self.model_type = "mobilenet_v2"
-        self.xfer = models.mobilenet_v2(pretrained=True)
+        self.model_type = "vgg11"
+        self.xfer = models.vgg11(pretrained=True)
         self.fc1 = nn.Linear(1000, classes)
 
         self.param_size = 0
@@ -76,7 +76,8 @@ class RoshamboModel(pl.LightningModule):
               'classes': classes,
               'model': self.model_type,
               'params': param_size,
-              'size': file_size
+              'size': file_size,
+              'timestamp': datetime.now().isoformat()
             }, indent=4))
 
         return (param_size, file_size)

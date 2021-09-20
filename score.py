@@ -15,11 +15,11 @@ from torchvision import transforms
 from inference_schema.schema_decorators import input_schema, output_schema
 from inference_schema.parameter_types.standard_py_parameter_type import StandardPythonParameterType
 
-session, transform, classes, input_name = None, None, None, None
+session, transform, classes, input_name, model_stamp = None, None, None, None, None
 logger = logging.getLogger()
 
 def init():
-    global session, transform, classes, input_name, logger
+    global session, transform, classes, input_name, logger, model_stamp
     logger.info('Attempting to load model artifacts')
 
     if 'AZUREML_MODEL_DIR' in os.environ:
@@ -41,6 +41,7 @@ def init():
     logger.info(f'metadata load complete: {model_meta}')
 
     classes = model_meta['classes']
+    model_stamp = model_meta['timestamp']
 
     logger.info('loading model')
     session = rt.InferenceSession(str(model_file))
@@ -66,11 +67,12 @@ def init():
     'rock': StandardPythonParameterType(0.2621823),
     'scissors': StandardPythonParameterType(0.21790285)
   }),
-  'updated': StandardPythonParameterType(datetime.datetime.now().isoformat()),
+  'timestamp': StandardPythonParameterType(datetime.datetime.now().isoformat()),
+  'model_update': StandardPythonParameterType(datetime.datetime.now().isoformat()),
   'message': StandardPythonParameterType("Success!")
 }))
 def run(image):
-    global session, transform, classes, input_name, logger
+    global session, transform, classes, input_name, logger, model_stamp
 
     print('starting inference clock')
     prev_time = time.time()
@@ -107,7 +109,8 @@ def run(image):
             'time': float(0),
             'prediction': classes[int(np.argmax(pred_onnx))],
             'scores': predictions,
-            'updated': datetime.datetime.now().isoformat(),
+            'timestamp': datetime.datetime.now().isoformat(),
+            'model_update': model_stamp,
             'message': 'Success!'
         }
 
@@ -121,7 +124,8 @@ def run(image):
             'time': float(0),
             'prediction': "none",
             'scores': predictions,
-            'updated': datetime.datetime.now().isoformat(),
+            'timestamp': datetime.datetime.now().isoformat(),
+            'model_update': model_stamp,
             'message': f'{e}'
         }
 
