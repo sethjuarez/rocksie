@@ -80,8 +80,8 @@ jobs:
             az ml endpoint show --name $APP_NAME-endpoint --query traffic > ./cloud/$GITHUB_RUN_ID.json
             cat ./cloud/$GITHUB_RUN_ID.json
 
-            DEPLOY_NAME=$(python ./cloud/replace.py ./cloud/$GITHUB_RUN_ID.json --max | tr -d '"')
-            MIN_DEPLOY=$(python ./cloud/replace.py ./cloud/$GITHUB_RUN_ID.json --min | tr -d '"')
+            DEPLOY_NAME=$(python ./cloud/deployments.py ./cloud/$GITHUB_RUN_ID.json --max | tr -d '"')
+            MIN_DEPLOY=$(python ./cloud/deployments.py ./cloud/$GITHUB_RUN_ID.json --min | tr -d '"')
 
             echo Main: $DEPLOY_NAME
             echo Sub: $MIN_DEPLOY
