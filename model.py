@@ -18,8 +18,8 @@ class RoshamboModel(pl.LightningModule):
         self.save_hyperparameters()
         self.classes = classes
         self.lr = lr
-        self.model_type = "vgg11"
-        self.xfer = models.vgg11(pretrained=True)
+        self.model_type = "shufflenet_v2_x0_5"
+        self.xfer = models.shufflenet_v2_x0_5(pretrained=True)
         self.fc1 = nn.Linear(1000, classes)
 
         self.param_size = 0
