@@ -1,6 +1,6 @@
 $schema: https://azuremlschemas.azureedge.net/latest/environment.schema.json
 name: pytorch-lightning
-version: 6
+version: 1
 tags:
   pl_version: 1.4.2
 docker:

@@ -1,0 +1,8 @@
+$schema: https://azuremlschemas.azureedge.net/latest/environment.schema.json
+name: pytorch-lightning-cpu-deploy
+version: 1
+tags:
+  pl_version: 1.4.2
+docker:
+  image: mcr.microsoft.com/azureml/openmpi3.1.2-ubuntu18.04
+conda_file: file:conda_dependencies_deploy_cpu.yml
