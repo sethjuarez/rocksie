@@ -2,7 +2,7 @@ $schema: https://azuremlschemas.azureedge.net/latest/commandJob.schema.json
 experiment_name: rocksie
 code:
   local_path: ../
-command: python trainer.py --config config.yml --trainer.gpus 0 --trainer.default_root_dir ./outputs --data.data_dir /home/jiadu/data/roshambo
+command: python trainer.py --config config.yml --trainer.gpus 0 --trainer.default_root_dir ./outputs --data.data_dir /nfs_share/roshambo
 environment: azureml:pytorch-lightning-cpu:1
 compute:
   target: azureml:arc-aks-hci
