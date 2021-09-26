@@ -1,5 +1,5 @@
 $schema: https://azuremlschemas.azureedge.net/latest/commandJob.schema.json
-experiment_name: shopai
+experiment_name: {name}
 code:
   local_path: ../
 command: python trainer.py --config config.yml --trainer.gpus 0 --trainer.default_root_dir ./outputs --data.data_dir /nfs_share/roshambo

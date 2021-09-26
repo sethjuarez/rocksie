@@ -40,7 +40,9 @@ jobs:
 
     - name: 1. Run Job
       run: |
-          az ml job create --file ./cloud/job.yml --name $APP_NAME_$GITHUB_RUN_ID --stream 
+          python ./cloud/replace.py ./cloud/template.job --name $APP_NAME > ./cloud/JOB_$GITHUB_RUN_ID.yml
+          cat ./cloud/JOB_$GITHUB_RUN_ID.yml
+          az ml job create --file ./cloud/JOB_$GITHUB_RUN_ID.yml --name $APP_NAME_$GITHUB_RUN_ID --stream 
 
     - name: 2. Register Model
       run: |
