@@ -1,7 +1,7 @@
 $schema: https://azuremlschemas.azureedge.net/latest/managedOnlineDeployment.schema.json
 name: {name}
 type: online
-target: azureml:arc-aks-hci
+target: azureml:aks-hci-2cpu6gb
 auth_mode: key
 traffic:
   {deployment}: 100
@@ -24,7 +24,7 @@ deployments:
       max_concurrent_requests_per_instance: 1
       max_queue_wait_ms: 1000
     resource_requirements:
-      cpu: 0.5
+      cpu: 1
       memory_in_gb: 5
     liveness_probe:
       initial_delay: 10

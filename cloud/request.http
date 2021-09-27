@@ -1,0 +1,5 @@
+POST http://10.156.95.32/api/v1/endpoint/vision-endpoint/score HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer oNNLLrMUCC09pkSCWpKVuUiXC3lFI7aZ
+
+{ "image": "https://aiadvocate.z5.web.core.windows.net/rock.png" }

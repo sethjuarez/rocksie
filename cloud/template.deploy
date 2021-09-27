@@ -16,7 +16,7 @@ request_settings:
   max_concurrent_requests_per_instance: 1
   max_queue_wait_ms: 1000
 resource_requirements:
-  cpu: 0.5
+  cpu: 1
   memory_in_gb: 5
 liveness_probe:
   initial_delay: 10
