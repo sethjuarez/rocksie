@@ -1,7 +1,7 @@
 $schema: https://azuremlschemas.azureedge.net/latest/managedOnlineDeployment.schema.json
 name: {name}
 type: online
-target: azureml:aks-hci-2cpu6gb
+target: azureml:tailwind-k8s
 auth_mode: key
 traffic:
   {deployment}: 100

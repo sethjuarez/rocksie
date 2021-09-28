@@ -5,4 +5,4 @@ code:
 command: python trainer.py --config config.yml --trainer.gpus 0 --trainer.default_root_dir ./outputs --data.data_dir /nfs_share/roshambo
 environment: azureml:pytorch-lightning-cpu:1
 compute:
-  target: azureml:arc-aks-hci
+  target: azureml:tailwind-k8s
