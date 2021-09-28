@@ -21,6 +21,7 @@ class RoshamboModel(pl.LightningModule):
         self.model_type = "shufflenet_v2_x0_5"
         self.xfer = models.shufflenet_v2_x0_5(pretrained=True)
         self.fc1 = nn.Linear(1000, classes)
+        
 
         self.param_size = 0
 
