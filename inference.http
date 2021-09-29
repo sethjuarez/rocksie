@@ -1,0 +1,6 @@
+#####
+POST http://10.156.95.32/api/v1/endpoint/shopai-endpoint/score HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer yy9MhJu103b4smAaKFZGaLu9z4pmGgW0
+
+{"image":"https://aiadvocate.z5.web.core.windows.net/scissors.png"}
