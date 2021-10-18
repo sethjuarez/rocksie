@@ -1,0 +1,152 @@
+name: MLOps Continuous Integration and Delivery
+
+on:
+  workflow_dispatch:
+         
+  push:
+    branches:
+      - main
+    paths:
+      - '**.py'
+      - '**.yml'
+      - '**.yaml'
+
+env:
+  APP_NAME: rocksie
+
+jobs:
+  run_job:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2.3.3
+
+    - name: Setup Python
+      uses: actions/setup-python@v2.1.4
+      with:
+        python-version: 3.7
+
+    - name: add az ml extension
+      run: |
+        az extension add -n ml -y
+
+    - name: azure login
+      uses: azure/login@v1
+      with:
+        creds: ${{secrets.AZURE_TOKEN}}
+
+    - name: set aml defaults
+      run: |
+          az config set defaults.workspace=${{secrets.AML_WORKSPACE}}
+          az config set defaults.group=${{secrets.AML_RG}}
+
+    - name: Run Job
+      run: |
+          az ml job create --file ./cloud/job.yml --name $APP_NAME_$GITHUB_RUN_ID --stream 
+
+
+  register_model:
+    needs: [run_job]
+    runs-on: ubuntu-latest
+    outputs:
+      model_id: ${{steps.register_model.register.model_id}}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2.3.3
+
+    - name: Setup Python
+      uses: actions/setup-python@v2.1.4
+      with:
+        python-version: 3.7
+
+    - name: add az ml extension
+      run: |
+        az extension add -n ml -y
+
+    - name: azure login
+      uses: azure/login@v1
+      with:
+        creds: ${{secrets.AZURE_TOKEN}}
+
+    - name: set aml defaults
+      run: |
+          az config set defaults.workspace=${{secrets.AML_WORKSPACE}}
+          az config set defaults.group=${{secrets.AML_RG}}
+    - name: Register Model
+      id: register
+      run: |
+        az ml job download --name $APP_NAME_$GITHUB_RUN_ID --outputs --download-path ./run
+        mkdir model
+        cp ./run/$APP_NAME_$GITHUB_RUN_ID/outputs/model/model.onnx ./model/model.onnx
+        cp ./run/$APP_NAME_$GITHUB_RUN_ID/outputs/model/meta.json ./model/meta.json
+        LAST_MODEL_VER=$(az ml model show -n $APP_NAME-model --query version | tr -d "\r")
+        az ml model create --name $APP_NAME-model --local-path ./model --version $((LAST_MODEL_VER+1))
+        echo "::set-output name=model_id::$((LAST_MODEL_VER+1))"
+
+
+  endpoint_check:
+    runs-on: ubuntu-latest
+    outputs:
+      deployments: ${{steps.deployments.outputs.deployments}}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2.3.3
+
+    - name: Setup Python
+      uses: actions/setup-python@v2.1.4
+      with:
+        python-version: 3.7
+
+    - name: add az ml extension
+      run: |
+        az extension add -n ml -y
+
+    - name: azure login
+      uses: azure/login@v1
+      with:
+        creds: ${{secrets.AZURE_TOKEN}}
+
+    - name: set aml defaults
+      run: |
+          az config set defaults.workspace=${{secrets.AML_WORKSPACE}}
+          az config set defaults.group=${{secrets.AML_RG}}
+    - id: deployments
+      run: |
+        ENDPOINT=$(az ml endpoint list --query "[?name=='$APP_NAME-endpoint'].name | length(@)" | tr -d "\r")
+        echo "::set-output name=deployments::$ENDPOINT"
+
+  full_deploy:
+    needs: [endpoint_check, register_model]
+    runs-on: ubuntu-latest
+    if: ${{ needs.endpoint_check.outputs.deployments == '0' }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2.3.3
+
+    - name: Setup Python
+      uses: actions/setup-python@v2.1.4
+      with:
+        python-version: 3.7
+
+    - name: add az ml extension
+      run: |
+        az extension add -n ml -y
+
+    - name: azure login
+      uses: azure/login@v1
+      with:
+        creds: ${{secrets.AZURE_TOKEN}}
+
+    - name: set aml defaults
+      run: |
+          az config set defaults.workspace=${{secrets.AML_WORKSPACE}}
+          az config set defaults.group=${{secrets.AML_RG}}
+    - name: Add Deployment
+      run: |
+        MODEL_VER=${{needs.register_model.outputs.model_id}}
+        python ./cloud/replace.py ./cloud/full.deploy --name $APP_NAME-endpoint --model $APP_NAME-model --version $MODEL_VER --deployment $APP_NAME-$GITHUB_RUN_ID > ./cloud/$GITHUB_RUN_ID.yml
+        echo Endpoint Creation:
+        cat ./cloud/$GITHUB_RUN_ID.yml
+        az ml endpoint create -f ./cloud/$GITHUB_RUN_ID.yml
+

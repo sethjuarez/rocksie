@@ -1,3 +1,4 @@
+from statistics import mode
 import mlflow
 import warnings
 from pathlib import Path
@@ -18,6 +19,8 @@ class RoshamboCLI(LightningCLI):
           "model_size": "{:,}".format(file_size),
           "model_type": model.model_type
         })
+        mlflow.log_artifacts(str(model_dir), 'onnx')
+
         
 if __name__ == '__main__':
     warnings.filterwarnings("ignore")

@@ -2,14 +2,7 @@ name: MLOps Continuous Integration and Delivery
 
 on:
   workflow_dispatch:
-         
-  push:
-    branches:
-      - main
-    paths:
-      - '**.py'
-      - '**.yml'
-      - '**.yaml'
+
 jobs:
   ml-workflow:
     runs-on: ubuntu-latest
