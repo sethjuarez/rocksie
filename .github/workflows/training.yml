@@ -29,7 +29,7 @@ jobs:
 
     - name: add az ml extension
       run: |
-        az extension add --source https://azuremlsdktestpypi.blob.core.windows.net/wheels/sdk-cli-v2/ml-0.0.15_october_cand-py3-none-any.whl --yes
+        az extension add -n ml -y
 
     - name: azure login
       uses: azure/login@v1
@@ -61,7 +61,7 @@ jobs:
 
     - name: add az ml extension
       run: |
-        az extension add --source https://azuremlsdktestpypi.blob.core.windows.net/wheels/sdk-cli-v2/ml-0.0.15_october_cand-py3-none-any.whl --yes
+        az extension add -n ml -y
 
     - name: azure login
       uses: azure/login@v1
@@ -109,7 +109,7 @@ jobs:
           az config set defaults.workspace=${{secrets.AML_WORKSPACE}}
           az config set defaults.group=${{secrets.AML_RG}}
     - id: deployments
-      name: get deployment count
+      name: check endpoint
       run: |
         ENDPOINT_EXISTS=$(az ml online-endpoint list -o tsv --query "[?name=='$APP_NAME-endpoint'][name]" | wc -l)
         if [[ ENDPOINT_EXISTS -ne 1 ]]; then
