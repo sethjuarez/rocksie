@@ -48,8 +48,6 @@ jobs:
   register:
     needs: [experiment]
     runs-on: ubuntu-latest
-    outputs:
-      model_id: ${{steps.register.register.model_id}}
     steps:
     - name: Checkout
       uses: actions/checkout@v2.3.3
@@ -81,8 +79,6 @@ jobs:
         cp ./run/$APP_NAME_$GITHUB_RUN_ID/outputs/model/meta.json ./model/meta.json
         LAST_MODEL_VER=$(az ml model show -n $APP_NAME-model --query version | tr -d "\r")
         az ml model create --name $APP_NAME-model --local-path ./model --version $((LAST_MODEL_VER+1))
-        echo "::set-output name=model_id::$((LAST_MODEL_VER+1))"
-
 
   endpoint:
     runs-on: ubuntu-latest
@@ -145,8 +141,8 @@ jobs:
           az config set defaults.group=${{secrets.AML_RG}}
     - name: Add Deployment
       run: |
-        LATEST_MODEL_VERSION=${{needs.register.outputs.model_id}}
-        MODEL_REF=azureml:$APP_NAME-model:$LATEST_MODEL_VERSION
+        LATEST_MODEL_VERSION=$(az ml model show -n $APP_NAME-model -o tsv --query version)
+        MODEL_REF=azureml:risk-model:$LATEST_MODEL_VERSION
         echo $MODEL_REF
 
         # create deployment
