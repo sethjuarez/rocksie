@@ -15,7 +15,7 @@ env:
   APP_NAME: rocksie
 
 jobs:
-  run_job:
+  run_experiment:
     runs-on: ubuntu-latest
     
     steps:
@@ -47,7 +47,7 @@ jobs:
 
 
   register_model:
-    needs: [run_job]
+    needs: [run_experiment]
     runs-on: ubuntu-latest
     outputs:
       model_id: ${{steps.register_model.register.model_id}}
@@ -149,4 +149,42 @@ jobs:
         echo Endpoint Creation:
         cat ./cloud/$GITHUB_RUN_ID.yml
         az ml endpoint create -f ./cloud/$GITHUB_RUN_ID.yml
+
+  add_deployment:
+    needs: [endpoint_check, register_model]
+    runs-on: ubuntu-latest
+    if: ${{ needs.endpoint_check.outputs.deployments == '1' }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2.3.3
+
+    - name: Setup Python
+      uses: actions/setup-python@v2.1.4
+      with:
+        python-version: 3.7
+
+    - name: add az ml extension
+      run: |
+        az extension add -n ml -y
+
+    - name: azure login
+      uses: azure/login@v1
+      with:
+        creds: ${{secrets.AZURE_TOKEN}}
+
+    - name: set aml defaults
+      run: |
+          az config set defaults.workspace=${{secrets.AML_WORKSPACE}}
+          az config set defaults.group=${{secrets.AML_RG}}
+    - name: Add Deployment
+      run: |
+        MODEL_VER=${{needs.register_model.outputs.model_id}}
+        DEPLOY_NAME=$(az ml endpoint show --name $APP_NAME-endpoint --query deployments[0].name | tr -d '"')
+        python ./cloud/replace.py ./cloud/template.deploy --name $APP_NAME-$GITHUB_RUN_ID --model $APP_NAME-model --version $MODEL_VER > ./cloud/$GITHUB_RUN_ID.yml
+        echo New Deployment Definition:
+        cat ./cloud/$GITHUB_RUN_ID.yml
+        echo az ml endpoint update --name $APP_NAME-endpoint --deployment-file ./cloud/$GITHUB_RUN_ID.yml --traffic "$DEPLOY_NAME:100,$APP_NAME-$GITHUB_RUN_ID:0"
+        az ml endpoint update --name $APP_NAME-endpoint --deployment-file ./cloud/$GITHUB_RUN_ID.yml --traffic "$DEPLOY_NAME:100,$APP_NAME-$GITHUB_RUN_ID:0"
+        echo az ml endpoint update --name $APP_NAME-endpoint --traffic "$DEPLOY_NAME:90,$APP_NAME-$GITHUB_RUN_ID:10"
+        az ml endpoint update --name $APP_NAME-endpoint --traffic "$DEPLOY_NAME:90,$APP_NAME-$GITHUB_RUN_ID:10"
 
