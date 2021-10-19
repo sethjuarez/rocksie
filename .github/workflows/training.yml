@@ -145,7 +145,8 @@ jobs:
           az config set defaults.group=${{secrets.AML_RG}}
     - name: Add Deployment
       run: |
-        MODEL_REF=azureml:$APP_NAME-model:${{needs.register_model.outputs.model_id}}
+        LATEST_MODEL_VERSION=${{needs.register_model.outputs.model_id}}
+        MODEL_REF=azureml:$APP_NAME-model:$LATEST_MODEL_VERSION
         echo $MODEL_REF
 
         # create deployment
