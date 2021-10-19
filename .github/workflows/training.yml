@@ -15,7 +15,7 @@ env:
   APP_NAME: rocksie
 
 jobs:
-  run_experiment:
+  experiment:
     runs-on: ubuntu-latest
     
     steps:
@@ -29,7 +29,7 @@ jobs:
 
     - name: add az ml extension
       run: |
-        az extension add -n ml -y
+        az extension add --source https://azuremlsdktestpypi.blob.core.windows.net/wheels/sdk-cli-v2/ml-0.0.15_october_cand-py3-none-any.whl --yes
 
     - name: azure login
       uses: azure/login@v1
@@ -45,9 +45,8 @@ jobs:
       run: |
           az ml job create --file ./cloud/job.yml --name $APP_NAME_$GITHUB_RUN_ID --stream 
 
-
-  register_model:
-    needs: [run_experiment]
+  register:
+    needs: [experiment]
     runs-on: ubuntu-latest
     outputs:
       model_id: ${{steps.register_model.register.model_id}}
@@ -62,7 +61,7 @@ jobs:
 
     - name: add az ml extension
       run: |
-        az extension add -n ml -y
+        az extension add --source https://azuremlsdktestpypi.blob.core.windows.net/wheels/sdk-cli-v2/ml-0.0.15_october_cand-py3-none-any.whl --yes
 
     - name: azure login
       uses: azure/login@v1
@@ -98,7 +97,7 @@ jobs:
 
     - name: add az ml extension
       run: |
-        az extension add -n ml -y
+        az extension add --source https://azuremlsdktestpypi.blob.core.windows.net/wheels/sdk-cli-v2/ml-0.0.15_october_cand-py3-none-any.whl --yes
 
     - name: azure login
       uses: azure/login@v1
@@ -120,7 +119,7 @@ jobs:
         fi
 
   deployment:
-    needs: [endpoint, register_model]
+    needs: [endpoint, register]
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
@@ -133,7 +132,7 @@ jobs:
 
     - name: add az ml extension
       run: |
-        az extension add -n ml -y
+        az extension add --source https://azuremlsdktestpypi.blob.core.windows.net/wheels/sdk-cli-v2/ml-0.0.15_october_cand-py3-none-any.whl --yes
 
     - name: azure login
       uses: azure/login@v1
@@ -161,5 +160,4 @@ jobs:
             # rollout new traffic percentages
             az ml online-endpoint update -n $APP_NAME-endpoint --traffic "$PROD_DEPLOYMENT=90 $APP_NAME-$GITHUB_RUN_ID=10"        
         fi
-
   
