@@ -12,6 +12,5 @@ compute:
   target: azureml:gandalf
 inputs:
   images:
-    data:
-      datastore: azureml:roshambo:1
+    data: azureml:roshambo:1
     mode: mount
