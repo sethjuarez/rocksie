@@ -1,6 +1,6 @@
 name: blue
 app_insights_enabled: true
-model: azureml:roshambo:1
+model: azureml:rocksie-model:1
 code_configuration:      
   code: 
     local_path: ../
