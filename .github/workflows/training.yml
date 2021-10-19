@@ -112,6 +112,7 @@ jobs:
           az config set defaults.workspace=${{secrets.AML_WORKSPACE}}
           az config set defaults.group=${{secrets.AML_RG}}
     - id: deployments
+      name: get deployment count
       run: |
         ENDPOINT=$(az ml endpoint list --query "[?name=='$APP_NAME-endpoint'].name | length(@)" | tr -d "\r")
         echo "::set-output name=deployments::$ENDPOINT"

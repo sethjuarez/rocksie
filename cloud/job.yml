@@ -1,4 +1,4 @@
-$schema: https://azuremlschemas.azureedge.net/preview/commandJob.schema.json
+$schema: https://azuremlschemas.azureedge.net/latest/commandJob.schema.json
 experiment_name: rocksie
 code:
   local_path: ../
@@ -8,8 +8,10 @@ command:  >-
   --trainer.default_root_dir ./outputs 
   --data.data_dir {inputs.images}
 environment: azureml:pytorch-lightning:6
-compute: azureml:gandalf
+compute: 
+  target: azureml:gandalf
 inputs:
   images:
-    dataset: azureml:roshambo:1
+    data:
+      path: azureml:roshambo:1
     mode: mount
