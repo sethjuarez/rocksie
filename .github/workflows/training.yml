@@ -85,10 +85,8 @@ jobs:
         echo "::set-output name=model_id::$((LAST_MODEL_VER+1))"
 
 
-  endpoint_check:
+  endpoint:
     runs-on: ubuntu-latest
-    outputs:
-      deployments: ${{steps.deployments.outputs.deployments}}
     steps:
     - name: Checkout
       uses: actions/checkout@v2.3.3
@@ -114,13 +112,16 @@ jobs:
     - id: deployments
       name: get deployment count
       run: |
-        ENDPOINT=$(az ml endpoint list --query "[?name=='$APP_NAME-endpoint'].name | length(@)" | tr -d "\r")
-        echo "::set-output name=deployments::$ENDPOINT"
+        ENDPOINT_EXISTS=$(az ml online-endpoint list -o tsv --query "[?name=='$APP_NAME-endpoint'][name]" | wc -l)
+        if [[ ENDPOINT_EXISTS -ne 1 ]]; then
+            az ml online-endpoint create -n $APP_NAME-endpoint -f ./cloud/endpoint.yml
+        else
+            echo "endpoint exists"
+        fi
 
-  full_deploy:
-    needs: [endpoint_check, register_model]
+  deployment:
+    needs: [endpoint, register_model]
     runs-on: ubuntu-latest
-    if: ${{ needs.endpoint_check.outputs.deployments == '0' }}
     steps:
     - name: Checkout
       uses: actions/checkout@v2.3.3
@@ -145,47 +146,20 @@ jobs:
           az config set defaults.group=${{secrets.AML_RG}}
     - name: Add Deployment
       run: |
-        MODEL_VER=${{needs.register_model.outputs.model_id}}
-        python ./cloud/replace.py ./cloud/full.deploy --name $APP_NAME-endpoint --model $APP_NAME-model --version $MODEL_VER --deployment $APP_NAME-$GITHUB_RUN_ID > ./cloud/$GITHUB_RUN_ID.yml
-        echo Endpoint Creation:
-        cat ./cloud/$GITHUB_RUN_ID.yml
-        az ml endpoint create -f ./cloud/$GITHUB_RUN_ID.yml
+        MODEL_REF=azureml:$APP_NAME-model:${{needs.register_model.outputs.model_id}}
+        echo $MODEL_REF
 
-  add_deployment:
-    needs: [endpoint_check, register_model]
-    runs-on: ubuntu-latest
-    if: ${{ needs.endpoint_check.outputs.deployments == '1' }}
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2.3.3
+        # create deployment
+        az ml online-deployment create --name $APP_NAME-$GITHUB_RUN_ID --endpoint $APP_NAME-endpoint -f ./cloud/deployment.yml --set model=$MODEL_REF
 
-    - name: Setup Python
-      uses: actions/setup-python@v2.1.4
-      with:
-        python-version: 3.7
+        # check for prod and adjust traffic (if exists)
+        PROD_DEPLOYMENT=$(az ml online-endpoint show -n $APP_NAME-endpoint -o tsv --query "tags.PROD_DEPLOYMENT")
+        if [[ -z "$PROD_DEPLOYMENT" ]]; then
+            # tag the current deployment as prod and set traffic to 100%
+            az ml online-endpoint update --name $APP_NAME-endpoint --traffic "$APP_NAME-$GITHUB_RUN_ID=100" --set tags.PROD_DEPLOYMENT=$APP_NAME-$GITHUB_RUN_ID
+        else
+            # rollout new traffic percentages
+            az ml online-endpoint update -n $APP_NAME-endpoint --traffic "$PROD_DEPLOYMENT=90 $APP_NAME-$GITHUB_RUN_ID=10"        
+        fi
 
-    - name: add az ml extension
-      run: |
-        az extension add -n ml -y
-
-    - name: azure login
-      uses: azure/login@v1
-      with:
-        creds: ${{secrets.AZURE_TOKEN}}
-
-    - name: set aml defaults
-      run: |
-          az config set defaults.workspace=${{secrets.AML_WORKSPACE}}
-          az config set defaults.group=${{secrets.AML_RG}}
-    - name: Add Deployment
-      run: |
-        MODEL_VER=${{needs.register_model.outputs.model_id}}
-        DEPLOY_NAME=$(az ml endpoint show --name $APP_NAME-endpoint --query deployments[0].name | tr -d '"')
-        python ./cloud/replace.py ./cloud/template.deploy --name $APP_NAME-$GITHUB_RUN_ID --model $APP_NAME-model --version $MODEL_VER > ./cloud/$GITHUB_RUN_ID.yml
-        echo New Deployment Definition:
-        cat ./cloud/$GITHUB_RUN_ID.yml
-        echo az ml endpoint update --name $APP_NAME-endpoint --deployment-file ./cloud/$GITHUB_RUN_ID.yml --traffic "$DEPLOY_NAME:100,$APP_NAME-$GITHUB_RUN_ID:0"
-        az ml endpoint update --name $APP_NAME-endpoint --deployment-file ./cloud/$GITHUB_RUN_ID.yml --traffic "$DEPLOY_NAME:100,$APP_NAME-$GITHUB_RUN_ID:0"
-        echo az ml endpoint update --name $APP_NAME-endpoint --traffic "$DEPLOY_NAME:90,$APP_NAME-$GITHUB_RUN_ID:10"
-        az ml endpoint update --name $APP_NAME-endpoint --traffic "$DEPLOY_NAME:90,$APP_NAME-$GITHUB_RUN_ID:10"
-
+  
