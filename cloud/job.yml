@@ -13,5 +13,5 @@ compute:
 inputs:
   images:
     data:
-      path: azureml:roshambo:1
+      datastore: azureml:roshambo:1
     mode: mount
