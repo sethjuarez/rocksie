@@ -93,7 +93,7 @@ jobs:
 
     - name: add az ml extension
       run: |
-        az extension add --source https://azuremlsdktestpypi.blob.core.windows.net/wheels/sdk-cli-v2/ml-0.0.15_october_cand-py3-none-any.whl --yes
+        az extension add -n ml -y
 
     - name: azure login
       uses: azure/login@v1
@@ -107,9 +107,9 @@ jobs:
     - id: deployments
       name: check endpoint
       run: |
-        ENDPOINT_EXISTS=$(az ml online-endpoint list -o tsv --query "[?name=='$APP_NAME-endpoint'][name]" | wc -l)
+        ENDPOINT_EXISTS=$(az ml endpoint list -o tsv --query "[?name=='$APP_NAME-endpoint'][name]" | wc -l)
         if [[ ENDPOINT_EXISTS -ne 1 ]]; then
-            az ml online-endpoint create -n $APP_NAME-endpoint -f ./cloud/endpoint.yml
+            az ml endpoint create -n $APP_NAME-endpoint -f ./cloud/endpoint.yml
         else
             echo "endpoint exists"
         fi
@@ -128,7 +128,7 @@ jobs:
 
     - name: add az ml extension
       run: |
-        az extension add --source https://azuremlsdktestpypi.blob.core.windows.net/wheels/sdk-cli-v2/ml-0.0.15_october_cand-py3-none-any.whl --yes
+        az extension add -n ml -y
 
     - name: azure login
       uses: azure/login@v1
@@ -143,21 +143,20 @@ jobs:
       run: |
         LATEST_MODEL_VERSION=$(az ml model show -n $APP_NAME-model -o tsv --query version)
         MODEL_REF=azureml:$APP_NAME-model:$LATEST_MODEL_VERSION
-        echo $MODEL_REF
 
         # create deployment
-        echo az ml online-deployment create --name $APP_NAME-$GITHUB_RUN_ID --endpoint $APP_NAME-endpoint -f ./cloud/deployment.yml --set model=$MODEL_REF
-        az ml online-deployment create --name $APP_NAME-$GITHUB_RUN_ID --endpoint $APP_NAME-endpoint -f ./cloud/deployment.yml --set model=$MODEL_REF
+        echo az ml deployment create --name $APP_NAME-$GITHUB_RUN_ID --endpoint $APP_NAME-endpoint -f ./cloud/deployment.yml --set model=$MODEL_REF
+        az ml deployment create --name $APP_NAME-$GITHUB_RUN_ID --endpoint $APP_NAME-endpoint -f ./cloud/deployment.yml --set model=$MODEL_REF
 
         # check for prod and adjust traffic (if exists)
-        PROD_DEPLOYMENT=$(az ml online-endpoint show -n $APP_NAME-endpoint -o tsv --query "tags.PROD_DEPLOYMENT")
+        PROD_DEPLOYMENT=$(az ml endpoint show -n $APP_NAME-endpoint -o tsv --query "tags.PROD_DEPLOYMENT")
         if [[ -z "$PROD_DEPLOYMENT" ]]; then
             # tag the current deployment as prod and set traffic to 100%
-            echo az ml online-endpoint update --name $APP_NAME-endpoint --traffic "$APP_NAME-$GITHUB_RUN_ID=100" --set tags.PROD_DEPLOYMENT=$APP_NAME-$GITHUB_RUN_ID
-            az ml online-endpoint update --name $APP_NAME-endpoint --traffic "$APP_NAME-$GITHUB_RUN_ID=100" --set tags.PROD_DEPLOYMENT=$APP_NAME-$GITHUB_RUN_ID
+            echo az ml endpoint update --name $APP_NAME-endpoint --traffic "$APP_NAME-$GITHUB_RUN_ID=100" --set tags.PROD_DEPLOYMENT=$APP_NAME-$GITHUB_RUN_ID
+            az ml endpoint update --name $APP_NAME-endpoint --traffic "$APP_NAME-$GITHUB_RUN_ID=100" --set tags.PROD_DEPLOYMENT=$APP_NAME-$GITHUB_RUN_ID
         else
             # rollout new traffic percentages
-            echo az ml online-endpoint update --name $APP_NAME-endpoint --traffic "$PROD_DEPLOYMENT=90 $APP_NAME-$GITHUB_RUN_ID=10"
-            az ml online-endpoint update --name $APP_NAME-endpoint --traffic "$PROD_DEPLOYMENT=90 $APP_NAME-$GITHUB_RUN_ID=10"
+            echo az ml endpoint update --name $APP_NAME-endpoint --traffic "$PROD_DEPLOYMENT=90 $APP_NAME-$GITHUB_RUN_ID=10"
+            az ml endpoint update --name $APP_NAME-endpoint --traffic "$PROD_DEPLOYMENT=90 $APP_NAME-$GITHUB_RUN_ID=10"
         fi
   
