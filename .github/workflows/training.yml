@@ -145,8 +145,8 @@ jobs:
         MODEL_REF=azureml:$APP_NAME-model:$LATEST_MODEL_VERSION
 
         # create deployment
-        echo az ml deployment create --name $APP_NAME-$GITHUB_RUN_ID --endpoint $APP_NAME-endpoint -f ./cloud/deployment.yml --set model=$MODEL_REF
-        az ml deployment create --name $APP_NAME-$GITHUB_RUN_ID --endpoint $APP_NAME-endpoint -f ./cloud/deployment.yml --set model=$MODEL_REF
+        echo az ml endpoint update -n $APP_NAME-endpoint -f ./cloud/deployment.yml --set model=$MODEL_REF --set name=$APP_NAME-$GITHUB_RUN_ID
+        az ml endpoint update -n $APP_NAME-endpoint -f ./cloud/deployment.yml --set model=$MODEL_REF --set name=$APP_NAME-$GITHUB_RUN_ID
 
         # check for prod and adjust traffic (if exists)
         PROD_DEPLOYMENT=$(az ml endpoint show -n $APP_NAME-endpoint -o tsv --query "tags.PROD_DEPLOYMENT")
