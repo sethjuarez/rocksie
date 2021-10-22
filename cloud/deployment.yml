@@ -1,11 +1,15 @@
 green: 0
-  - name: green
-    app_insights_enabled: true
-    model: azureml:rocksie-model:1
-    code_configuration:
-      code:
-        local_path: ../
-      scoring_script: score.py
-    environment: azureml:pytorch-lightning-gpu-deploy:3
-    instance_type: Standard_NC6s_v3
+- name: green
+  app_insights_enabled: true
+  model: azureml:rocksie-model:1
+  code_configuration:
+    code: 
+      local_path: ../
+    scoring_script: score.py
+  environment: azureml:pytorch-lightning-gpu-deploy:3
+  instance_type: Standard_NC6s_v3
+  scale_settings:
+    scale_type: manual
     instance_count: 1
+    min_instances: 1
+    max_instances: 1
