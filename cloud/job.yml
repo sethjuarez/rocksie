@@ -4,7 +4,8 @@ code:
   local_path: ../
 command:  >-
   python trainer.py 
-  --config config.yml 
+  --config config.yml
+  --trainer.max_epochs 1
   --trainer.default_root_dir ./outputs 
   --data.data_dir {inputs.images}
 environment: azureml:pytorch-lightning:6
