@@ -146,7 +146,7 @@ jobs:
 
         # rewrite yml
         python ./cloud/replace.py ./cloud/deployment.yml --name $APP_NAME-$GITHUB_RUN_ID --model $MODEL_REF > ./cloud/$GITHUB_RUN_ID-deploy.yml
-        cat ./cloud/$GITHUB_RUN_ID.yml
+        cat ./cloud/$GITHUB_RUN_ID-deploy.yml
 
         # create deployment
         echo az ml endpoint update --name $APP_NAME-endpoint --deployment-file ./cloud/$GITHUB_RUN_ID-deploy.yml
