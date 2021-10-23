@@ -156,11 +156,11 @@ jobs:
         PROD_DEPLOYMENT=$(az ml endpoint show -n $APP_NAME-endpoint -o tsv --query "tags.PROD_DEPLOYMENT")
         if [[ -z "$PROD_DEPLOYMENT" ]]; then
             # tag the current deployment as prod and set traffic to 100%
-            echo az ml endpoint update --name $APP_NAME-endpoint --traffic "$APP_NAME-$GITHUB_RUN_ID=100" --set tags.PROD_DEPLOYMENT=$APP_NAME-$GITHUB_RUN_ID
-            az ml endpoint update --name $APP_NAME-endpoint --traffic "$APP_NAME-$GITHUB_RUN_ID=100" --set tags.PROD_DEPLOYMENT=$APP_NAME-$GITHUB_RUN_ID
+            echo az ml endpoint update --name $APP_NAME-endpoint --traffic "$APP_NAME-$GITHUB_RUN_ID:100" --set tags.PROD_DEPLOYMENT=$APP_NAME-$GITHUB_RUN_ID
+            az ml endpoint update --name $APP_NAME-endpoint --traffic "$APP_NAME-$GITHUB_RUN_ID:100" --set tags.PROD_DEPLOYMENT=$APP_NAME-$GITHUB_RUN_ID
         else
             # rollout new traffic percentages
-            echo az ml endpoint update --name $APP_NAME-endpoint --traffic "$PROD_DEPLOYMENT=90 $APP_NAME-$GITHUB_RUN_ID=10"
-            az ml endpoint update --name $APP_NAME-endpoint --traffic "$PROD_DEPLOYMENT=90,$APP_NAME-$GITHUB_RUN_ID=10"
+            echo az ml endpoint update --name $APP_NAME-endpoint --traffic "$PROD_DEPLOYMENT:90,$APP_NAME-$GITHUB_RUN_ID:10"
+            az ml endpoint update --name $APP_NAME-endpoint --traffic "$PROD_DEPLOYMENT:90,$APP_NAME-$GITHUB_RUN_ID:10"
         fi
   
