@@ -1,3 +1,4 @@
 $schema: https://azuremlschemas.azureedge.net/latest/managedOnlineEndpoint.schema.json
 name: rocksie-endpoint
+type: online
 auth_mode: key

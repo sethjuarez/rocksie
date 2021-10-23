@@ -144,10 +144,14 @@ jobs:
         LATEST_MODEL_VERSION=$(az ml model show -n $APP_NAME-model -o tsv --query version)
         MODEL_REF=azureml:$APP_NAME-model:$LATEST_MODEL_VERSION
 
-        # create deployment
-        echo az ml endpoint update -n $APP_NAME-endpoint -f ./cloud/deployment.yml --set model=$MODEL_REF --set name=$APP_NAME-$GITHUB_RUN_ID
-        az ml endpoint update -n $APP_NAME-endpoint -f ./cloud/deployment.yml --set model=$MODEL_REF --set name=$APP_NAME-$GITHUB_RUN_ID
+        # rewrite yml
+        python ./cloud/replace.py ./cloud/deployment.yml --name $APP_NAME-$GITHUB_RUN_ID --model $MODEL_REF > ./cloud/$GITHUB_RUN_ID-deploy.yml
+        cat ./cloud/$GITHUB_RUN_ID.yml
 
+        # create deployment
+        echo az ml endpoint update --name $APP_NAME-endpoint --deployment-file ./cloud/$GITHUB_RUN_ID-deploy.yml
+        az ml endpoint update --name $APP_NAME-endpoint --deployment-file ./cloud/$GITHUB_RUN_ID-deploy.yml
+        
         # check for prod and adjust traffic (if exists)
         PROD_DEPLOYMENT=$(az ml endpoint show -n $APP_NAME-endpoint -o tsv --query "tags.PROD_DEPLOYMENT")
         if [[ -z "$PROD_DEPLOYMENT" ]]; then
@@ -157,6 +161,6 @@ jobs:
         else
             # rollout new traffic percentages
             echo az ml endpoint update --name $APP_NAME-endpoint --traffic "$PROD_DEPLOYMENT=90 $APP_NAME-$GITHUB_RUN_ID=10"
-            az ml endpoint update --name $APP_NAME-endpoint --traffic "$PROD_DEPLOYMENT=90 $APP_NAME-$GITHUB_RUN_ID=10"
+            az ml endpoint update --name $APP_NAME-endpoint --traffic "$PROD_DEPLOYMENT=90,$APP_NAME-$GITHUB_RUN_ID=10"
         fi
   
