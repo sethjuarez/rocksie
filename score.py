@@ -57,7 +57,7 @@ def init():
     logger.info(f'transforms initialized')
     logger.info(f'init complete!')
 
-@input_schema('image', StandardPythonParameterType("http://path/to/img"))
+@input_schema('image', StandardPythonParameterType("https://aiadvocate.z5.web.core.windows.net/scissors.png"))
 @output_schema(StandardPythonParameterType({
   'time': StandardPythonParameterType(0.060392),
   'prediction': StandardPythonParameterType("paper"),

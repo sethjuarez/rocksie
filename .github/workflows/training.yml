@@ -151,13 +151,9 @@ jobs:
         # check for prod and adjust traffic (if exists)
         PROD_DEPLOYMENT=$(az ml endpoint show -n $APP_NAME-endpoint -o tsv --query "tags.PROD_DEPLOYMENT")
         if [[ -z "$PROD_DEPLOYMENT" ]]; then
-            # create deployment
-            echo az ml endpoint update --name $APP_NAME-endpoint --deployment-file ./cloud/$GITHUB_RUN_ID-deploy.yml
-            az ml endpoint update --name $APP_NAME-endpoint --deployment-file ./cloud/$GITHUB_RUN_ID-deploy.yml
-
-            # tag the current deployment as prod and set traffic to 100%
-            echo az ml endpoint update --name $APP_NAME-endpoint --traffic "$APP_NAME-$GITHUB_RUN_ID:100" --set tags.PROD_DEPLOYMENT=$APP_NAME-$GITHUB_RUN_ID
-            az ml endpoint update --name $APP_NAME-endpoint --traffic "$APP_NAME-$GITHUB_RUN_ID:100" --set tags.PROD_DEPLOYMENT=$APP_NAME-$GITHUB_RUN_ID
+            # create deployment and tag as prod
+            echo az ml endpoint update --name $APP_NAME-endpoint --deployment-file ./cloud/$GITHUB_RUN_ID-deploy.yml --traffic "$APP_NAME-$GITHUB_RUN_ID:100" --set tags.PROD_DEPLOYMENT=$APP_NAME-$GITHUB_RUN_ID
+            az ml endpoint update --name $APP_NAME-endpoint --deployment-file ./cloud/$GITHUB_RUN_ID-deploy.yml --traffic "$APP_NAME-$GITHUB_RUN_ID:100" --set tags.PROD_DEPLOYMENT=$APP_NAME-$GITHUB_RUN_ID
         else
             # create deployment and update traffic
             echo az ml endpoint update --name $APP_NAME-endpoint --deployment-file ./cloud/$GITHUB_RUN_ID-deploy.yml --traffic "$PROD_DEPLOYMENT:90,$APP_NAME-$GITHUB_RUN_ID:10"
