@@ -12,7 +12,7 @@ class RoshamboDataModule(pl.LightningDataModule):
         super().__init__()
         self.data_dir = data_dir
         self.batch_size = batch_size
-        self.train_split = train_split  
+        self.train_split = train_split
 
     def setup(self, stage: Optional[str] = None):
         self.transform = transforms.Compose([
