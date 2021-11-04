@@ -1,4 +1,3 @@
-from statistics import mode
 import mlflow
 import warnings
 from pathlib import Path
@@ -20,6 +19,7 @@ class RoshamboCLI(LightningCLI):
           "model_type": model.model_type
         })
         mlflow.log_artifacts(str(model_dir), 'onnx')
+        mlflow.pytorch.log_model(model, str(model_dir), registered_model_name="mlflow-rocksie")
 
         
 if __name__ == '__main__':
