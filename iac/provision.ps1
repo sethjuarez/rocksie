@@ -1,0 +1,1 @@
+az deployment sub create --location westus2 --template-file main.bicep
